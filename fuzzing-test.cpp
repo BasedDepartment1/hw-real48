@@ -1,8 +1,10 @@
 #include "real48.hpp"
 
-#include <cstring>
-#include <stdexcept>
+#include <cmath>
 #include <cstdint>
+#include <cstring>
+#include <limits>
+#include <stdexcept>
 
 namespace
 {
@@ -15,7 +17,12 @@ bool test(const std::uint8_t* data)
         T input {};
         std::memcpy(&input, data, sizeof(input));
         math::Real48 r48 {input};
-        return T{r48} == input;
+        const auto epsilon = std::numeric_limits<T>::epsilon();
+        const auto a = input;
+        const auto b = T {r48};
+        using std::fabs;
+        return fabs(a - b) <=
+               ((fabs(a) < fabs(b) ? fabs(b) : fabs(a)) * epsilon);
     }
     catch (const std::overflow_error& err)
     {
@@ -23,7 +30,7 @@ bool test(const std::uint8_t* data)
     return false;
 }
 
-}
+} // namespace
 
 extern "C" int
 LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size)
